@@ -3,15 +3,9 @@ import { IonicModule, AlertController } from '@ionic/angular';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-
-interface User {
-  id: number;
-  name: string;
-  email: string;
-  isAdmin: boolean;
-  profilePicture: string;
-  joinDate: Date;
-}
+import { DatabaseService, User, UserStats } from '../services/database.service';
+import { AuthService } from '../services/auth.service';
+import { Observable } from 'rxjs';
 
 @Component({
   selector: 'app-profile',
@@ -21,43 +15,32 @@ interface User {
   imports: [IonicModule, CommonModule, FormsModule]
 })
 export class ProfilePage implements OnInit {
-  currentUser: User;
-  totalUsers: number = 0;
+  currentUser: User | null = null;
+  stats$!: Observable<UserStats>;
   isLoading: boolean = true;
-  stats = {
-    activeUsers: 0,
-    newUsersThisMonth: 0,
-    totalAdmins: 0
-  };
 
   constructor(
     private alertController: AlertController,
-    private router: Router
-  ) { 
-    this.currentUser = {
-      id: 1,
-      name: 'João Silva',
-      email: 'joao.silva@exemplo.com',
-      isAdmin: true,
-      profilePicture: 'assets/default-avatar.png',
-      joinDate: new Date(2023, 5, 15)
-    };
-  }
+    private router: Router,
+    private dbService: DatabaseService,
+    private authService: AuthService
+  ) {}
 
   ngOnInit() {
     this.loadUserData();
   }
 
   loadUserData() {
-    setTimeout(() => {
-      this.totalUsers = 157;
-      this.stats = {
-        activeUsers: 89,
-        newUsersThisMonth: 12,
-        totalAdmins: 3
-      };
+    this.isLoading = true;
+    
+    // Obter usuário atual
+    this.dbService.getCurrentUser().subscribe(user => {
+      this.currentUser = user;
       this.isLoading = false;
-    }, 1000);
+    });
+    
+    // Obter estatísticas (para admins)
+    this.stats$ = this.dbService.getStats();
   }
 
   async confirmDeleteAccount() {
@@ -81,16 +64,35 @@ export class ProfilePage implements OnInit {
     await alert.present();
   }
 
-  deleteAccount() {
+  async deleteAccount() {
+    if (!this.currentUser) return;
+    
     this.isLoading = true;
     
-    setTimeout(() => {
-      this.isLoading = false;
+    try {
+      await this.dbService.deleteUser(this.currentUser.id);
+      await this.authService.logout();
       this.router.navigate(['/login']);
-    }, 1500);
+    } catch (error) {
+      console.error('Erro ao excluir conta', error);
+    } finally {
+      this.isLoading = false;
+    }
   }
 
-  formatDate(date: Date): string {
-    return date.toLocaleDateString('pt-BR');
+  async logout() {
+    this.isLoading = true;
+    try {
+      await this.authService.logout();
+      this.router.navigate(['/login']);
+    } catch (error) {
+      console.error('Erro ao fazer logout', error);
+    } finally {
+      this.isLoading = false;
+    }
+  }
+
+  formatDate(dateString: string): string {
+    return new Date(dateString).toLocaleDateString('pt-BR');
   }
 }

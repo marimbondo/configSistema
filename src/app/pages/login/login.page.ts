@@ -1,85 +1,59 @@
-import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
-import { IonicModule } from '@ionic/angular';
-import { CommonModule } from '@angular/common';
+import { Component } from '@angular/core';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
+import { LoadingController, ToastController } from '@ionic/angular';
+import { AuthService } from '../services/auth.service';
 
 @Component({
   selector: 'app-login',
   templateUrl: './login.page.html',
   styleUrls: ['./login.page.scss'],
-  standalone: true,
-  imports: [IonicModule, CommonModule, ReactiveFormsModule]
 })
-export class LoginPage implements OnInit {
+export class LoginPage {
   loginForm: FormGroup;
-  registerForm: FormGroup;
-  segmentValue = 'login';
-  isPasswordVisible = false;
-  isRegisterPasswordVisible = false;
+  submitting = false;
 
-  constructor(private formBuilder: FormBuilder) {
+  constructor(
+    private formBuilder: FormBuilder,
+    private authService: AuthService,
+    private router: Router,
+    private loadingCtrl: LoadingController,
+    private toastCtrl: ToastController
+  ) {
     this.loginForm = this.formBuilder.group({
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(6)]]
     });
-
-    this.registerForm = this.formBuilder.group({
-      name: ['', [Validators.required]],
-      email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required, Validators.minLength(6)]],
-      confirmPassword: ['', [Validators.required]]
-    }, { validators: this.passwordMatchValidator });
   }
 
-  ngOnInit() {}
-
-  passwordMatchValidator(g: FormGroup) {
-    const password = g.get('password')?.value;
-    const confirmPassword = g.get('confirmPassword')?.value;
-    return password === confirmPassword ? null : { mismatch: true };
-  }
-
-  segmentChanged(event: any) {
-    this.segmentValue = event.detail.value;
-  }
-
-  togglePasswordVisibility() {
-    this.isPasswordVisible = !this.isPasswordVisible;
-  }
-
-  toggleRegisterPasswordVisibility() {
-    this.isRegisterPasswordVisible = !this.isRegisterPasswordVisible;
-  }
-
-  onLogin() {
-    if (this.loginForm.valid) {
-      console.log('Login form data:', this.loginForm.value);
-    } else {
-      this.markFormGroupTouched(this.loginForm);
+  async login() {
+    if (this.loginForm.invalid) {
+      return;
     }
-  }
 
-  onRegister() {
-    if (this.registerForm.valid) {
-      console.log('Register form data:', this.registerForm.value);
-    } else {
-      this.markFormGroupTouched(this.registerForm);
-    }
-  }
-
-  markFormGroupTouched(formGroup: FormGroup) {
-    Object.values(formGroup.controls).forEach(control => {
-      control.markAsTouched();
-      if (control instanceof FormGroup) {
-        this.markFormGroupTouched(control);
-      }
+    this.submitting = true;
+    const loading = await this.loadingCtrl.create({
+      message: 'Entrando...'
     });
-  }
+    await loading.present();
 
-  get loginEmail() { return this.loginForm.get('email'); }
-  get loginPassword() { return this.loginForm.get('password'); }
-  get registerName() { return this.registerForm.get('name'); }
-  get registerEmail() { return this.registerForm.get('email'); }
-  get registerPassword() { return this.registerForm.get('password'); }
-  get registerConfirmPassword() { return this.registerForm.get('confirmPassword'); }
+    const { email, password } = this.loginForm.value;
+
+    try {
+      await this.authService.login(email, password);
+      await loading.dismiss();
+      this.router.navigate(['/home']);
+    } catch (error) {
+      await loading.dismiss();
+      const toast = await this.toastCtrl.create({
+        message: 'Credenciais inválidas. Tente novamente.',
+        duration: 3000,
+        position: 'bottom',
+        color: 'danger'
+      });
+      await toast.present();
+    } finally {
+      this.submitting = false;
+    }
+  }
 }

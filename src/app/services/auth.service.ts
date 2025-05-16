@@ -1,32 +1,34 @@
 import { Injectable } from '@angular/core';
 import { Router } from '@angular/router';
-import { StorageService } from './storage.service';
-import { User } from '../models/user';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
+import { DatabaseService, User } from './database.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  private currentUser: User | null = null;
+  constructor(
+    private dbService: DatabaseService,
+    private router: Router
+  ) {}
 
-  constructor(private storage: StorageService, private router: Router) {}
-
-  async login(email: string, password: string): Promise<boolean> {
-    const users = await this.storage.getUsers();
-    const user = users.find((u: User) => u.email === email && u.password === password);
-    if (user) {
-      this.currentUser = user;
-      return true;
-    }
-    return false;
+  login(email: string, password: string): Promise<User> {
+    return this.dbService.login(email, password);
   }
 
-  logout() {
-    this.currentUser = null;
+  logout(): void {
+    this.dbService.logout();
     this.router.navigate(['/login']);
   }
 
-  getCurrentUser(): User | null {
-    return this.currentUser;
+  isAuthenticated(): Observable<boolean> {
+    return this.dbService.getCurrentUser().pipe(
+      map(user => !!user && user.isAuthenticated)
+    );
+  }
+
+  getCurrentUser(): Observable<User | null> {
+    return this.dbService.getCurrentUser();
   }
 }
