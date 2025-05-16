@@ -1,0 +1,107 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>
+      Login / Cadastro
+    </ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <div class="login-container">
+    <div class="logo-container">
+      <ion-img src="assets/logo.png" alt="Logo" class="logo"></ion-img>
+    </div>
+
+    <ion-segment (ionChange)="segmentChanged($event)" [value]="segmentValue">
+      <ion-segment-button value="login">
+        <ion-label>Login</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="register">
+        <ion-label>Cadastro</ion-label>
+      </ion-segment-button>
+    </ion-segment>
+
+    <div [ngClass]="{'hide-segment': segmentValue !== 'login'}">
+      <form [formGroup]="loginForm" (ngSubmit)="onLogin()">
+        <ion-item class="ion-margin-top">
+          <ion-label position="floating">Email</ion-label>
+          <ion-input type="email" formControlName="email"></ion-input>
+        </ion-item>
+        <div class="error-message" *ngIf="loginEmail?.invalid && loginEmail?.touched">
+          <span *ngIf="loginEmail?.errors?.['required']">Email é obrigatório</span>
+          <span *ngIf="loginEmail?.errors?.['email']">Email inválido</span>
+        </div>
+
+        <ion-item class="ion-margin-top">
+          <ion-label position="floating">Senha</ion-label>
+          <ion-input [type]="isPasswordVisible ? 'text' : 'password'" formControlName="password"></ion-input>
+          <ion-button slot="end" fill="clear" (click)="togglePasswordVisibility()">
+            <ion-icon [name]="isPasswordVisible ? 'eye-off' : 'eye'"></ion-icon>
+          </ion-button>
+        </ion-item>
+        <div class="error-message" *ngIf="loginPassword?.invalid && loginPassword?.touched">
+          <span *ngIf="loginPassword?.errors?.['required']">Senha é obrigatória</span>
+          <span *ngIf="loginPassword?.errors?.['minlength']">Senha deve ter pelo menos 6 caracteres</span>
+        </div>
+
+        <ion-button expand="block" type="submit" class="ion-margin-top">
+          Entrar
+        </ion-button>
+
+        <div class="forgot-password">
+          <ion-button fill="clear" size="small">
+            Esqueci minha senha
+          </ion-button>
+        </div>
+      </form>
+    </div>
+
+    <div [ngClass]="{'hide-segment': segmentValue !== 'register'}">
+      <form [formGroup]="registerForm" (ngSubmit)="onRegister()">
+        <ion-item class="ion-margin-top">
+          <ion-label position="floating">Nome completo</ion-label>
+          <ion-input type="text" formControlName="name"></ion-input>
+        </ion-item>
+        <div class="error-message" *ngIf="registerName?.invalid && registerName?.touched">
+          <span *ngIf="registerName?.errors?.['required']">Nome é obrigatório</span>
+        </div>
+
+        <ion-item class="ion-margin-top">
+          <ion-label position="floating">Email</ion-label>
+          <ion-input type="email" formControlName="email"></ion-input>
+        </ion-item>
+        <div class="error-message" *ngIf="registerEmail?.invalid && registerEmail?.touched">
+          <span *ngIf="registerEmail?.errors?.['required']">Email é obrigatório</span>
+          <span *ngIf="registerEmail?.errors?.['email']">Email inválido</span>
+        </div>
+
+        <ion-item class="ion-margin-top">
+          <ion-label position="floating">Senha</ion-label>
+          <ion-input [type]="isRegisterPasswordVisible ? 'text' : 'password'" formControlName="password"></ion-input>
+          <ion-button slot="end" fill="clear" (click)="toggleRegisterPasswordVisibility()">
+            <ion-icon [name]="isRegisterPasswordVisible ? 'eye-off' : 'eye'"></ion-icon>
+          </ion-button>
+        </ion-item>
+        <div class="error-message" *ngIf="registerPassword?.invalid && registerPassword?.touched">
+          <span *ngIf="registerPassword?.errors?.['required']">Senha é obrigatória</span>
+          <span *ngIf="registerPassword?.errors?.['minlength']">Senha deve ter pelo menos 6 caracteres</span>
+        </div>
+
+        <ion-item class="ion-margin-top">
+          <ion-label position="floating">Confirmar senha</ion-label>
+          <ion-input type="password" formControlName="confirmPassword"></ion-input>
+        </ion-item>
+        <div class="error-message" *ngIf="registerConfirmPassword?.invalid && registerConfirmPassword?.touched">
+          <span *ngIf="registerConfirmPassword?.errors?.['required']">Confirmação de senha é obrigatória</span>
+        </div>
+        <div class="error-message" *ngIf="registerForm.hasError('mismatch') && registerConfirmPassword?.touched">
+          Senhas não conferem
+        </div>
+
+        <ion-button expand="block" type="submit" class="ion-margin-top">
+          Cadastrar
+        </ion-button>
+      </form>
+    </div>
+  </div>
+</ion-content>

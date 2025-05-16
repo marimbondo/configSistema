@@ -1,0 +1,1 @@
+console.log('sqlite3.js carregado');
